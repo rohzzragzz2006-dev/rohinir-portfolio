@@ -2,6 +2,20 @@
 @source "../src";
 @import "tw-animate-css";
 
+@theme {
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-script: "Dancing Script", cursive;
+  --color-violet: oklch(0.62 0.22 290);
+  --color-violet-soft: oklch(0.78 0.14 290);
+  --color-violet-deep: oklch(0.48 0.24 290);
+  --color-coral: oklch(0.75 0.17 25);
+  --color-coral-deep: oklch(0.68 0.19 25);
+  --color-emerald-soft: oklch(0.72 0.16 160);
+}
+
+
+
 @custom-variant dark (&:is(.dark *));
 
 /*
