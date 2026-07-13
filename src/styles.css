@@ -148,12 +148,77 @@
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
+  * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 }
+
+@utility glass {
+  background: color-mix(in oklab, white 70%, transparent);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid color-mix(in oklab, white 60%, transparent);
+  box-shadow: 0 1px 0 0 color-mix(in oklab, white 90%, transparent) inset,
+    0 20px 60px -20px color-mix(in oklab, var(--color-violet) 30%, transparent);
+}
+@utility glass-strong {
+  background: color-mix(in oklab, white 82%, transparent);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid color-mix(in oklab, white 70%, transparent);
+  box-shadow: 0 1px 0 0 color-mix(in oklab, white 95%, transparent) inset,
+    0 30px 80px -30px color-mix(in oklab, var(--color-violet) 40%, transparent);
+}
+@utility text-gradient-violet {
+  background: linear-gradient(135deg, var(--color-violet-deep), var(--color-violet), var(--color-coral));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@utility bg-hero-gradient {
+  background:
+    radial-gradient(1200px 600px at 10% 0%, color-mix(in oklab, var(--color-violet) 22%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 100% 20%, color-mix(in oklab, var(--color-coral) 20%, transparent), transparent 60%),
+    radial-gradient(700px 400px at 50% 100%, color-mix(in oklab, var(--color-emerald-soft) 18%, transparent), transparent 60%),
+    linear-gradient(180deg, oklch(0.995 0.003 290), oklch(0.985 0.01 290));
+}
+@utility bg-section-soft {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--color-violet) 4%, white), white);
+}
+@utility shadow-glow-violet {
+  box-shadow: 0 10px 30px -10px color-mix(in oklab, var(--color-violet) 55%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--color-violet) 20%, transparent);
+}
+@utility shadow-glow-coral {
+  box-shadow: 0 10px 30px -10px color-mix(in oklab, var(--color-coral) 60%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--color-coral) 25%, transparent);
+}
+@utility font-script { font-family: var(--font-script); }
+@utility font-display { font-family: var(--font-display); }
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(-24px) translateX(12px); }
+}
+@keyframes wave-hand {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10%, 30% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(10deg); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+@utility animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
+@utility animate-wave { animation: wave-hand 2.6s ease-in-out infinite; transform-origin: 70% 70%; }
+@utility animate-pulse-ring { animation: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
