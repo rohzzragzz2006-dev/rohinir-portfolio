@@ -735,11 +735,17 @@ function Portfolio() {
     if (isAdmin) toast("You're signed in as admin — click any image to upload, or open Edit for the full dashboard.", { duration: 4000 });
   }, [isAdmin]);
 
-  const onUpdate = (next: PortfolioData) => setData(next);
+  const onUpdate = async (next: PortfolioData) => {
+    setData(next);
+    try {
+      await savePortfolio(next);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Save failed");
+    }
+  };
   const onAvatarChange = async (path: string) => {
     const next = { ...data, hero: { ...data.hero, avatarPath: path } };
-    setData(next);
-    await savePortfolio(next).catch((e) => toast.error(e.message));
+    await onUpdate(next);
   };
 
   return (
