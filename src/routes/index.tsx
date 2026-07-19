@@ -88,11 +88,16 @@ function EditableImage({
             className="hidden"
             onChange={(e) => handleFile(e.target.files?.[0])}
           />
+          {/* persistent corner badge so admins immediately see the slot is editable */}
+          <span className="pointer-events-none absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[color:var(--color-violet)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-glow-violet">
+            <Pencil className="size-3" /> Editable
+          </span>
           <button
             type="button"
             onClick={handlePick}
             disabled={uploading}
-            className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition hover:bg-black/50 hover:opacity-100"
+            className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition hover:bg-black/50 hover:opacity-100 focus-visible:opacity-100"
+            aria-label={url ? "Replace image" : "Upload image"}
           >
             <span className="inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-xs font-semibold text-[color:var(--color-violet-deep)] shadow-glow-violet">
               {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <ImagePlus className="size-3.5" />}
@@ -101,6 +106,7 @@ function EditableImage({
           </button>
         </>
       ) : null}
+
     </div>
   );
 }
@@ -616,6 +622,8 @@ function Contact({ data }: { data: PortfolioData }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const items = useMemo(() => ([
     { icon: Mail, label: "Email", value: data.contact.email, href: `mailto:${data.contact.email}` },
@@ -626,42 +634,50 @@ function Contact({ data }: { data: PortfolioData }) {
     { icon: Award, label: "Credly", value: data.contact.credly, href: data.contact.credly || "#" },
   ]), [data.contact]);
 
-  const validate = () => {
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      toast.error("Please fill in name, email and message.");
-      return false;
-    }
-    if (name.length > 100 || email.length > 255 || message.length > 1000) {
-      toast.error("Please shorten your inputs.");
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      toast.error("Please enter a valid email address.");
-      return false;
-    }
-    return true;
-  };
-
-  const composeBody = () =>
-    `Hi Rohini,\n\n${message.trim()}\n\n— ${name.trim()} (${email.trim()})`;
-
-  const sendEmail = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-    const subject = encodeURIComponent(`Portfolio message from ${name.trim()}`);
-    const body = encodeURIComponent(composeBody());
-    window.location.href = `mailto:${data.contact.email}?subject=${subject}&body=${body}`;
-  };
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedMessage = message.trim();
 
-  const sendWhatsApp = () => {
-    if (!validate()) return;
-    const phoneDigits = data.contact.phone.replace(/\D/g, "");
-    if (!phoneDigits) {
-      toast.error("WhatsApp number is not configured yet.");
+    if (!trimmedName || !trimmedEmail || !trimmedMessage) {
+      toast.error("Please fill in name, email and message.");
       return;
     }
-    const text = encodeURIComponent(composeBody());
-    window.open(`https://wa.me/${phoneDigits}?text=${text}`, "_blank", "noopener,noreferrer");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (trimmedName.length > 100 || trimmedEmail.length > 255 || trimmedMessage.length > 2000) {
+      toast.error("Please shorten your inputs.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // 1) Store in backend inbox (admin can view later).
+      const { submitContactMessage } = await import("@/lib/contact.functions");
+      await submitContactMessage({
+        data: { name: trimmedName, email: trimmedEmail, message: trimmedMessage, source: "form" },
+      });
+
+      // 2) Forward to WhatsApp so Rohini receives it instantly on her phone.
+      const phoneDigits = data.contact.phone.replace(/\D/g, "");
+      const body = `New portfolio message\n\nName: ${trimmedName}\nEmail: ${trimmedEmail}\n\n${trimmedMessage}`;
+      if (phoneDigits) {
+        window.open(`https://wa.me/${phoneDigits}?text=${encodeURIComponent(body)}`, "_blank", "noopener,noreferrer");
+      }
+
+      setSent(true);
+      setName("");
+      setEmail("");
+      setMessage("");
+      toast.success("Message sent — Rohini will get back to you soon.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send message. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -691,7 +707,7 @@ function Contact({ data }: { data: PortfolioData }) {
             </div>
           </FadeIn>
           <FadeIn delay={0.1}>
-            <form onSubmit={sendEmail} className="rounded-3xl glass-strong p-6 sm:p-8">
+            <form onSubmit={handleSubmit} className="rounded-3xl glass-strong p-6 sm:p-8">
               <div className="grid gap-4">
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Name</span>
@@ -703,17 +719,16 @@ function Contact({ data }: { data: PortfolioData }) {
                 </label>
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Message</span>
-                  <textarea required maxLength={1000} rows={5} value={message} onChange={(e) => setMessage(e.target.value)} className="w-full rounded-xl border border-border bg-white/70 px-4 py-3 text-sm outline-none transition focus:border-[color:var(--color-violet)] focus:ring-2 focus:ring-[color:var(--color-violet)]/25" placeholder="How can I help?" />
+                  <textarea required maxLength={2000} rows={5} value={message} onChange={(e) => setMessage(e.target.value)} className="w-full rounded-xl border border-border bg-white/70 px-4 py-3 text-sm outline-none transition focus:border-[color:var(--color-violet)] focus:ring-2 focus:ring-[color:var(--color-violet)]/25" placeholder="How can I help?" />
                 </label>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-violet)] px-5 py-3 text-sm font-semibold text-white shadow-glow-violet transition hover:scale-[1.02]">
-                    <Mail className="size-4" /> Send via Email
-                  </button>
-                  <button type="button" onClick={sendWhatsApp} className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-emerald-soft)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:scale-[1.02]">
-                    <Send className="size-4" /> Send via WhatsApp
-                  </button>
-                </div>
-                <p className="text-center text-[11px] text-muted-foreground">Opens your mail app or WhatsApp with your message ready to send.</p>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-violet)] px-5 py-3 text-sm font-semibold text-white shadow-glow-violet transition hover:scale-[1.02] disabled:opacity-70"
+                >
+                  {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  {submitting ? "Sending…" : sent ? "Message Sent" : "Send Message"}
+                </button>
               </div>
             </form>
           </FadeIn>
@@ -722,6 +737,8 @@ function Contact({ data }: { data: PortfolioData }) {
     </section>
   );
 }
+
+
 
 
 function Nav({ isAdmin }: { isAdmin: boolean }) {
