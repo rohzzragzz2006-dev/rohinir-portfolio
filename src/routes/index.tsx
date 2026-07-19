@@ -754,7 +754,7 @@ function Portfolio() {
     <div id="top" className="relative overflow-x-hidden">
       <Nav isAdmin={isAdmin} />
       <Hero data={data} onAvatarChange={onAvatarChange} />
-      <About data={data} />
+      <About data={data} onUpdate={onUpdate} />
       <Education data={data} />
       <Skills data={data} onUpdate={onUpdate} />
       <Certifications data={data} onUpdate={onUpdate} />
