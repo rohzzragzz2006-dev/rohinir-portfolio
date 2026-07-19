@@ -274,7 +274,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-function About({ data }: { data: PortfolioData }) {
+function About({ data, onUpdate }: { data: PortfolioData; onUpdate: (next: PortfolioData) => void }) {
   return (
     <section id="about" className="relative py-24 sm:py-32">
       <div className="container mx-auto px-6">
@@ -283,10 +283,11 @@ function About({ data }: { data: PortfolioData }) {
           <FadeIn>
             <div className="max-w-lg">
               <EditableImage
-                imagePath={null}
+                imagePath={data.about.imagePath}
                 fallbackIcon="HeartPulse"
                 label="Editable illustration — biomedical engineer at work"
                 subdir="about"
+                onChange={(path) => onUpdate({ ...data, about: { ...data.about, imagePath: path } })}
               />
             </div>
           </FadeIn>
@@ -307,6 +308,7 @@ function About({ data }: { data: PortfolioData }) {
     </section>
   );
 }
+
 
 function Education({ data }: { data: PortfolioData }) {
   return (
@@ -611,7 +613,10 @@ function Resume({ data }: { data: PortfolioData }) {
 }
 
 function Contact({ data }: { data: PortfolioData }) {
-  const [sent, setSent] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
   const items = useMemo(() => ([
     { icon: Mail, label: "Email", value: data.contact.email, href: `mailto:${data.contact.email}` },
     { icon: Phone, label: "Phone", value: data.contact.phone, href: `tel:${data.contact.phone.replace(/\s+/g, "")}` },
@@ -620,6 +625,44 @@ function Contact({ data }: { data: PortfolioData }) {
     { icon: Github, label: "GitHub", value: data.contact.github, href: data.contact.github || "#" },
     { icon: Award, label: "Credly", value: data.contact.credly, href: data.contact.credly || "#" },
   ]), [data.contact]);
+
+  const validate = () => {
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      toast.error("Please fill in name, email and message.");
+      return false;
+    }
+    if (name.length > 100 || email.length > 255 || message.length > 1000) {
+      toast.error("Please shorten your inputs.");
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Please enter a valid email address.");
+      return false;
+    }
+    return true;
+  };
+
+  const composeBody = () =>
+    `Hi Rohini,\n\n${message.trim()}\n\n— ${name.trim()} (${email.trim()})`;
+
+  const sendEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    const subject = encodeURIComponent(`Portfolio message from ${name.trim()}`);
+    const body = encodeURIComponent(composeBody());
+    window.location.href = `mailto:${data.contact.email}?subject=${subject}&body=${body}`;
+  };
+
+  const sendWhatsApp = () => {
+    if (!validate()) return;
+    const phoneDigits = data.contact.phone.replace(/\D/g, "");
+    if (!phoneDigits) {
+      toast.error("WhatsApp number is not configured yet.");
+      return;
+    }
+    const text = encodeURIComponent(composeBody());
+    window.open(`https://wa.me/${phoneDigits}?text=${text}`, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <section id="contact" className="relative py-24 bg-section-soft sm:py-32">
@@ -648,24 +691,29 @@ function Contact({ data }: { data: PortfolioData }) {
             </div>
           </FadeIn>
           <FadeIn delay={0.1}>
-            <form onSubmit={(e) => { e.preventDefault(); setSent(true); }} className="rounded-3xl glass-strong p-6 sm:p-8">
+            <form onSubmit={sendEmail} className="rounded-3xl glass-strong p-6 sm:p-8">
               <div className="grid gap-4">
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Name</span>
-                  <input required className="w-full rounded-xl border border-border bg-white/70 px-4 py-3 text-sm outline-none transition focus:border-[color:var(--color-violet)] focus:ring-2 focus:ring-[color:var(--color-violet)]/25" placeholder="Your name" />
+                  <input required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-xl border border-border bg-white/70 px-4 py-3 text-sm outline-none transition focus:border-[color:var(--color-violet)] focus:ring-2 focus:ring-[color:var(--color-violet)]/25" placeholder="Your name" />
                 </label>
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Email</span>
-                  <input required type="email" className="w-full rounded-xl border border-border bg-white/70 px-4 py-3 text-sm outline-none transition focus:border-[color:var(--color-violet)] focus:ring-2 focus:ring-[color:var(--color-violet)]/25" placeholder="you@company.com" />
+                  <input required type="email" maxLength={255} value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-border bg-white/70 px-4 py-3 text-sm outline-none transition focus:border-[color:var(--color-violet)] focus:ring-2 focus:ring-[color:var(--color-violet)]/25" placeholder="you@company.com" />
                 </label>
                 <label className="text-sm">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Message</span>
-                  <textarea required rows={5} className="w-full rounded-xl border border-border bg-white/70 px-4 py-3 text-sm outline-none transition focus:border-[color:var(--color-violet)] focus:ring-2 focus:ring-[color:var(--color-violet)]/25" placeholder="How can I help?" />
+                  <textarea required maxLength={1000} rows={5} value={message} onChange={(e) => setMessage(e.target.value)} className="w-full rounded-xl border border-border bg-white/70 px-4 py-3 text-sm outline-none transition focus:border-[color:var(--color-violet)] focus:ring-2 focus:ring-[color:var(--color-violet)]/25" placeholder="How can I help?" />
                 </label>
-                <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-violet)] px-5 py-3 text-sm font-semibold text-white shadow-glow-violet transition hover:scale-[1.02]">
-                  <Send className="size-4" /> {sent ? "Message Sent" : "Send Message"}
-                </button>
-                {sent ? <p className="text-center text-xs text-[color:var(--color-emerald-soft)]">Thanks! I'll get back soon.</p> : null}
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-violet)] px-5 py-3 text-sm font-semibold text-white shadow-glow-violet transition hover:scale-[1.02]">
+                    <Mail className="size-4" /> Send via Email
+                  </button>
+                  <button type="button" onClick={sendWhatsApp} className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-emerald-soft)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:scale-[1.02]">
+                    <Send className="size-4" /> Send via WhatsApp
+                  </button>
+                </div>
+                <p className="text-center text-[11px] text-muted-foreground">Opens your mail app or WhatsApp with your message ready to send.</p>
               </div>
             </form>
           </FadeIn>
@@ -674,6 +722,7 @@ function Contact({ data }: { data: PortfolioData }) {
     </section>
   );
 }
+
 
 function Nav({ isAdmin }: { isAdmin: boolean }) {
   const items = [
@@ -752,7 +801,7 @@ function Portfolio() {
     <div id="top" className="relative overflow-x-hidden">
       <Nav isAdmin={isAdmin} />
       <Hero data={data} onAvatarChange={onAvatarChange} />
-      <About data={data} />
+      <About data={data} onUpdate={onUpdate} />
       <Education data={data} />
       <Skills data={data} onUpdate={onUpdate} />
       <Certifications data={data} onUpdate={onUpdate} />

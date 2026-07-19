@@ -81,6 +81,7 @@ export type PortfolioData = {
     heading: string;
     paragraphs: string[];
     badges: string[];
+    imagePath?: string | null;
   };
   contact: {
     email: string;
@@ -129,6 +130,7 @@ export const defaultPortfolio: PortfolioData = {
       "Continuous Learner",
       "AI Assisted Workflow",
     ],
+    imagePath: null,
   },
   contact: {
     email: "rohini@example.com",
