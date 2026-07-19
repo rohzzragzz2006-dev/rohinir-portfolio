@@ -130,6 +130,7 @@ export const defaultPortfolio: PortfolioData = {
       "Continuous Learner",
       "AI Assisted Workflow",
     ],
+    imagePath: null,
   },
   contact: {
     email: "rohini@example.com",
