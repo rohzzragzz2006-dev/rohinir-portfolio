@@ -81,6 +81,7 @@ export type PortfolioData = {
     heading: string;
     paragraphs: string[];
     badges: string[];
+    imagePath?: string | null;
   };
   contact: {
     email: string;
