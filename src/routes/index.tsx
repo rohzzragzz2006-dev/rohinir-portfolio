@@ -274,7 +274,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-function About({ data }: { data: PortfolioData }) {
+function About({ data, onUpdate }: { data: PortfolioData; onUpdate: (next: PortfolioData) => void }) {
   return (
     <section id="about" className="relative py-24 sm:py-32">
       <div className="container mx-auto px-6">
@@ -283,10 +283,11 @@ function About({ data }: { data: PortfolioData }) {
           <FadeIn>
             <div className="max-w-lg">
               <EditableImage
-                imagePath={null}
+                imagePath={data.about.imagePath}
                 fallbackIcon="HeartPulse"
                 label="Editable illustration — biomedical engineer at work"
                 subdir="about"
+                onChange={(path) => onUpdate({ ...data, about: { ...data.about, imagePath: path } })}
               />
             </div>
           </FadeIn>
@@ -307,6 +308,7 @@ function About({ data }: { data: PortfolioData }) {
     </section>
   );
 }
+
 
 function Education({ data }: { data: PortfolioData }) {
   return (
